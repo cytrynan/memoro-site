@@ -1,0 +1,1364 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>memoro − Tarjetas de memoria y repetición espaciada</title>
+    <meta
+      name="description"
+      content="Convierte texto web en flashcards. SM-2 muestra solo el repaso de hoy. Memoriza vocabulario. Datos locales, sin registro."
+    />
+    <meta name="theme-color" content="#ffffff" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="memoro − Tarjetas de memoria y repetición espaciada" />
+    <meta
+      property="og:description"
+      content="Convierte texto web en flashcards. SM-2 muestra solo el repaso de hoy. Memoriza vocabulario. Datos locales, sin registro."
+    />
+    <meta property="og:url" content="https://cytrynan.github.io/memoro-site/es/" />
+    <meta property="og:image" content="https://cytrynan.github.io/memoro-site/assets/og-1200x630.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <!-- 言語別ページ（docs/i18n/README.md §4）。x-default は日本語。 -->
+    <link rel="alternate" hreflang="ja" href="https://cytrynan.github.io/memoro-site/" />
+    <link rel="alternate" hreflang="en" href="https://cytrynan.github.io/memoro-site/en/" />
+    <link rel="alternate" hreflang="zh-CN" href="https://cytrynan.github.io/memoro-site/zh_CN/" />
+    <link rel="alternate" hreflang="zh-TW" href="https://cytrynan.github.io/memoro-site/zh_TW/" />
+    <link rel="alternate" hreflang="ko" href="https://cytrynan.github.io/memoro-site/ko/" />
+    <link rel="alternate" hreflang="es" href="https://cytrynan.github.io/memoro-site/es/" />
+    <link rel="alternate" hreflang="pt-BR" href="https://cytrynan.github.io/memoro-site/pt_BR/" />
+    <link rel="alternate" hreflang="fr" href="https://cytrynan.github.io/memoro-site/fr/" />
+    <link rel="alternate" hreflang="de" href="https://cytrynan.github.io/memoro-site/de/" />
+    <link rel="alternate" hreflang="x-default" href="https://cytrynan.github.io/memoro-site/" />
+    <!--
+      memoro 製品ページ（Apple.com 風・2026-10 改装）
+      - 明暗セクションを交互に積む / 1セクション=1主張 / 見出しで階層を作る
+      - フォントは system-ui スタック（SF Pro は配布不可）。外部フォント・CDN・リモートスクリプトなし
+      - 上部ナビは Liquid Glass の浮いたカプセル（Chromium では屈折、他は曇りガラスに自動フォールバック）
+      - 文言（機能・料金・権限・プライバシー）はストア掲載文 docs/store/listing-ja.md と同一
+    -->
+    <style>
+      :root {
+        --text: #1d1d1f;
+        --muted: #6e6e73;
+        --surface: #f5f5f7;
+        --hairline: #d2d2d7;
+        --link: #0066cc;
+        --cta: #0071e3;
+        --cta-hover: #0077ed;
+        --dark-text: #f5f5f7;
+        --dark-muted: #a1a1a6;
+        --dark-link: #2997ff;
+        --dark-card: #1d1d1f;
+        --ease: cubic-bezier(0.28, 0.11, 0.32, 1);
+        /* F1（2026-10-20 K 判定）: system-ui を CJK 名より前に置くと Windows の Chrome で游ゴシック UI になるため外した。
+           フォントファイルの同梱・外部読み込みはしない */
+        --font:
+          -apple-system, BlinkMacSystemFont, 'Hiragino Sans',
+          'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'BIZ UDPGothic',
+          'Yu Gothic UI', Meiryo, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        font-family: var(--font);
+        font-size: 17px;
+        line-height: 1.6;
+        color: var(--text);
+        background: #fff;
+        -webkit-font-smoothing: antialiased;
+      }
+      p,
+      li,
+      td,
+      figcaption {
+        overflow-wrap: anywhere;
+      }
+      a {
+        color: var(--link);
+      }
+      img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+      }
+
+      /* ---- 浮いたガラスのナビ ---- */
+      .nav {
+        position: fixed;
+        top: 14px;
+        left: 50%;
+        z-index: 20;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        max-width: calc(100vw - 32px);
+        padding: 7px 8px 7px 20px;
+        border-radius: 980px;
+        background: rgba(255, 255, 255, 0.55);
+        -webkit-backdrop-filter: blur(16px) saturate(160%);
+        backdrop-filter: blur(16px) saturate(160%);
+        box-shadow:
+          0 8px 32px rgba(0, 0, 0, 0.08),
+          inset 0 1px 0 rgba(255, 255, 255, 0.6),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
+        color: var(--text);
+        font-size: 13px;
+        transition:
+          background-color 0.4s var(--ease),
+          color 0.4s var(--ease);
+      }
+      .nav.on-dark {
+        background: rgba(30, 30, 32, 0.55);
+        color: var(--dark-text);
+        box-shadow:
+          0 8px 32px rgba(0, 0, 0, 0.4),
+          inset 0 1px 0 rgba(255, 255, 255, 0.14),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.1);
+      }
+      .nav .brand {
+        white-space: nowrap;
+        font-weight: 700;
+        font-size: 15px;
+        letter-spacing: -0.01em;
+        color: inherit;
+        text-decoration: none;
+      }
+      .nav-links {
+        display: flex;
+        gap: 18px;
+      }
+      .nav-links a {
+        white-space: nowrap;
+        color: inherit;
+        opacity: 0.8;
+        text-decoration: none;
+      }
+      .nav-links a:hover {
+        opacity: 1;
+      }
+      /* 言語切替: ナビ内の小さな <details>。JS 不要・外部リソース不要 */
+      .lang-switch {
+        position: relative;
+        font-size: 13px;
+      }
+      .lang-switch summary {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        min-height: 30px;
+        padding: 0 8px;
+        border-radius: 980px;
+        list-style: none;
+        white-space: nowrap;
+        cursor: pointer;
+        opacity: 0.8;
+      }
+      .lang-switch summary::-webkit-details-marker {
+        display: none;
+      }
+      .lang-switch summary:hover,
+      .lang-switch[open] summary {
+        opacity: 1;
+      }
+      .lang-switch summary svg {
+        width: 15px;
+        height: 15px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.6;
+      }
+      .lang-switch ul {
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 0;
+        z-index: 30;
+        min-width: 180px;
+        margin: 0;
+        padding: 6px;
+        list-style: none;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.92);
+        -webkit-backdrop-filter: blur(16px) saturate(160%);
+        backdrop-filter: blur(16px) saturate(160%);
+        box-shadow:
+          0 12px 36px rgba(0, 0, 0, 0.14),
+          inset 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+        color: var(--text);
+      }
+      .nav.on-dark .lang-switch ul {
+        background: rgba(30, 30, 32, 0.92);
+        color: var(--dark-text);
+        box-shadow:
+          0 12px 36px rgba(0, 0, 0, 0.5),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+      }
+      .lang-switch li a {
+        display: block;
+        padding: 8px 12px;
+        border-radius: 10px;
+        color: inherit;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .lang-switch li a:hover {
+        background: rgba(0, 0, 0, 0.06);
+      }
+      .nav.on-dark .lang-switch li a:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .lang-switch li a[aria-current='page'] {
+        font-weight: 700;
+      }
+      .nav-cta {
+        display: inline-flex;
+        align-items: center;
+        min-height: 30px;
+        padding: 5px 14px;
+        border-radius: 980px;
+        background: var(--cta);
+        color: #fff;
+        font-weight: 500;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .nav-cta:hover {
+        background: var(--cta-hover);
+      }
+      @media (max-width: 600px) {
+        .nav-links {
+          display: none;
+        }
+        /* 言語切替は地球アイコンだけにする（長い言語名＋長い CTA で 375px に収まらないため。aria-label で名前は残る） */
+        .lang-switch summary {
+          font-size: 0;
+          padding: 0 6px;
+        }
+        h1 br,
+        h2 br {
+          display: none;
+        }
+        .nav-cta {
+          min-height: 44px;
+          padding: 10px 18px;
+        }
+      }
+
+      /* ---- セクションの型 ---- */
+      .section {
+        padding: clamp(84px, 12vw, 150px) 22px;
+        text-align: center;
+        /* 画像の後ろの光（.device::before・左右 -33px）とプライバシーのカードの後ろの光（.bento-2::before・左右 -60px）が
+           幅 375px でページを 38px 横へ広げていた。節ごとに横だけ切る（#top と同じ。縦のにじみは残す） */
+        overflow-x: clip;
+      }
+      .section.dark {
+        background: #000;
+        color: var(--dark-text);
+      }
+      .section.gray {
+        background: var(--surface);
+      }
+      .wrap {
+        max-width: 980px;
+        margin: 0 auto;
+      }
+      .eyebrow {
+        margin: 0 0 14px;
+        font-size: clamp(19px, 2.2vw, 24px);
+        font-weight: 600;
+        color: var(--muted);
+      }
+      .dark .eyebrow {
+        color: var(--dark-muted);
+      }
+      h1,
+      h2 {
+        margin: 0 auto;
+        letter-spacing: 0;
+        font-feature-settings: 'palt';
+        text-wrap: balance;
+        word-break: auto-phrase; /* 日本語の文節で折り返す（Chrome 119+、他は通常の折返し） */
+      }
+      h1 {
+        max-width: 900px;
+        font-size: clamp(38px, 7vw, 76px);
+        font-weight: 700;
+        line-height: 1.1;
+      }
+      h2 {
+        max-width: 820px;
+        font-size: clamp(30px, 5vw, 56px);
+        font-weight: 600;
+        line-height: 1.12;
+      }
+      /* 文節単位で折り返すための区切り（auto-phrase 非対応環境でも効く） */
+      .ph {
+        display: inline-block;
+      }
+      .subhead {
+        max-width: 640px;
+        margin: 22px auto 0;
+        font-size: clamp(17px, 1.6vw, 21px);
+        line-height: 1.6;
+        color: var(--muted);
+        text-wrap: pretty;
+      }
+      .dark .subhead {
+        color: var(--dark-muted);
+      }
+      .cta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px 32px;
+        justify-content: center;
+        align-items: center;
+        margin-top: 30px;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 12px 24px;
+        border-radius: 980px;
+        background: var(--cta);
+        color: #fff;
+        font-size: 17px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: background-color 0.2s var(--ease);
+      }
+      .btn:hover {
+        background: var(--cta-hover);
+      }
+      .more {
+        font-size: 17px;
+        text-decoration: none;
+      }
+      .more:hover {
+        text-decoration: underline;
+      }
+      .dark .more {
+        color: var(--dark-link);
+      }
+      .more::after {
+        content: ' ›';
+      }
+
+      /* ---- 製品画像（ブラウザウィンドウ風のデバイス枠。画像は raw で浮かせない） ---- */
+      .device {
+        max-width: 980px;
+        margin: 56px auto 0;
+      }
+      .device .window {
+        position: relative;
+        z-index: 1;
+        border-radius: clamp(14px, 2vw, 22px);
+        overflow: hidden;
+        background: #fff;
+        box-shadow:
+          0 30px 80px rgba(0, 0, 0, 0.18),
+          0 0 0 0.5px rgba(0, 0, 0, 0.1);
+      }
+      .device .window::before {
+        content: '';
+        display: block;
+        height: 34px;
+        background:
+          radial-gradient(circle at 20px 50%, #ff5f57 5.5px, transparent 6.5px),
+          radial-gradient(circle at 40px 50%, #febc2e 5.5px, transparent 6.5px),
+          radial-gradient(circle at 60px 50%, #28c840 5.5px, transparent 6.5px),
+          linear-gradient(#f0f0f3, #e6e6ea);
+        border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+      }
+      .device img {
+        display: block;
+        width: 100%;
+      }
+      .dark .device .window {
+        background: #1c1c1e;
+        box-shadow:
+          0 30px 80px rgba(0, 0, 0, 0.6),
+          0 0 0 0.5px rgba(255, 255, 255, 0.12);
+      }
+      .dark .device .window::before {
+        background:
+          radial-gradient(circle at 20px 50%, #ff5f57 5.5px, transparent 6.5px),
+          radial-gradient(circle at 40px 50%, #febc2e 5.5px, transparent 6.5px),
+          radial-gradient(circle at 60px 50%, #28c840 5.5px, transparent 6.5px),
+          linear-gradient(#3a3a3c, #2c2c2e);
+        border-bottom-color: rgba(255, 255, 255, 0.1);
+      }
+      #top {
+        /* ヒーローのグロー（#top .device::before・inset -10%）が幅 390px で右へ 12px はみ出し、
+           ページに横スクロールが出ていた。横だけ切る（縦のにじみは次の節へ残す＝overflow: hidden にしない） */
+        overflow-x: clip;
+      }
+      #top .device {
+        position: relative;
+        isolation: isolate; /* ::before の z-index:-1 をこの figure の中に閉じ込める */
+      }
+      #top .device::before {
+        content: '';
+        position: absolute;
+        inset: -8% -10% -14%;
+        z-index: -1;
+        background: radial-gradient(ellipse at 50% 40%, rgba(0, 113, 227, 0.14), transparent 65%);
+        pointer-events: none;
+      }
+      .device figcaption {
+        margin-top: 18px;
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .dark .device figcaption {
+        color: var(--dark-muted);
+      }
+
+      /* ---- ベントー ---- */
+      .bento {
+        display: grid;
+        gap: 18px;
+        max-width: 980px;
+        margin: 48px auto 0;
+        padding: 0;
+        list-style: none;
+        text-align: left;
+      }
+      .bento-3 {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .bento-2 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      @media (max-width: 760px) {
+        .bento-3,
+        .bento-2 {
+          grid-template-columns: 1fr;
+        }
+      }
+      .card {
+        padding: 28px 26px;
+        border-radius: 24px;
+        background: var(--surface);
+      }
+      .dark .card {
+        background: var(--dark-card);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .card .num {
+        font-size: 40px;
+        font-weight: 700;
+        line-height: 1;
+        color: var(--muted); /* 押せない装飾に tint は付けない */
+      }
+      .dark .card .num {
+        color: var(--dark-muted);
+      }
+      .card h3 {
+        margin: 14px 0 8px;
+        font-size: 21px;
+        font-weight: 600;
+        line-height: 1.3;
+        font-feature-settings: 'palt';
+      }
+      .card p {
+        margin: 0;
+        font-size: 17px;
+        line-height: 1.6;
+        color: var(--muted);
+      }
+      .dark .card p {
+        color: var(--dark-muted);
+      }
+      .card .price {
+        font-size: clamp(40px, 5vw, 56px);
+        font-weight: 700;
+        line-height: 1.1;
+        letter-spacing: -0.01em;
+      }
+      .card .price small {
+        font-size: 0.45em;
+        font-weight: 600;
+        margin-left: 0.2em;
+      }
+      .gradient {
+        background: linear-gradient(90deg, #2997ff, #a972ff 55%, #ff6b8b);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      /* ---- 主な機能: カードではなく区切り線だけの素の一覧（説明文グリッドにしない） ---- */
+      .features {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0 48px;
+        max-width: 900px;
+        margin: 48px auto 0;
+        padding: 0;
+        list-style: none;
+        text-align: left;
+      }
+      .features li {
+        padding: 18px 0;
+        border-top: 1px solid var(--hairline);
+        font-size: 17px;
+        line-height: 1.6;
+        color: var(--muted);
+      }
+      /* 機能の節の見出し（白地）をグラデーション文字に（K 指示 2026-10-20）。文字の幅に縮めて中央に置き、
+         色が文字の端から端に乗るようにする。停止色は機能の一覧の小見出しと同じ（白の上で 4.6〜5.0:1） */
+      #features h2 {
+        width: fit-content;
+        background: linear-gradient(90deg, #0071e3, #8e44ec 55%, #d6336c);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      /* 復習タイマーの節（灰色の地）の太字：今日の成果・思い出すための工夫の見出しと、工夫のカード 3 枚の題（K 指示 2026-10-20）。
+         灰色の地では機能の節の青（#0071e3・4.31:1）とピンク（#d6336c・4.24:1）が足りないので、同じ流れで濃くした
+         #0066cc → #8e44ec → #c42b62（灰色の上 5.1 / 4.6 / 5.0:1、白いカードの上 5.6 / 5.0 / 5.4:1） */
+      #timer h3.gain-title,
+      #timer h3.gain-title + .bento .card h3 {
+        width: fit-content;
+        background: linear-gradient(90deg, #0066cc, #8e44ec 55%, #c42b62);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      #timer h3.gain-title {
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .features li strong {
+        display: block;
+        /* 見出しの文字幅に縮めて、グラデーションが文字の端から端に乗るようにする（K 指示 2026-10-20）。
+           明るい地向けの濃い停止色＝白の上で 4.6〜5.0:1（19px・600 は大きい文字に当たらないので 4.5:1 が基準） */
+        width: fit-content;
+        margin-bottom: 2px;
+        font-size: 19px;
+        font-weight: 600;
+        color: var(--text);
+        background: linear-gradient(90deg, #0071e3, #8e44ec 55%, #d6336c);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-feature-settings: 'palt';
+      }
+      @media (max-width: 760px) {
+        .features {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ---- 権限表 ---- */
+      .perms {
+        width: 100%;
+        max-width: 760px;
+        margin: 40px auto 0;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 15px;
+        line-height: 1.6;
+      }
+      .perms th,
+      .perms td {
+        padding: 14px 8px;
+        border-top: 1px solid var(--hairline);
+        vertical-align: top;
+      }
+      .perms th {
+        width: 36%;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .perms td {
+        color: var(--muted);
+      }
+      .perms tr:last-child th,
+      .perms tr:last-child td {
+        border-bottom: 1px solid var(--hairline);
+      }
+      .lead {
+        max-width: 640px;
+        margin: 56px auto 0;
+        font-size: 17px;
+        color: var(--muted);
+      }
+      .lead strong {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 21px;
+        color: var(--text);
+      }
+      .section.gray .card {
+        background: #fff;
+      }
+      .sources {
+        max-width: 760px;
+        margin: 40px auto 0;
+        padding: 0;
+        list-style: none;
+        text-align: left;
+        font-size: 13px;
+        line-height: 1.6;
+        color: var(--muted);
+      }
+      .sources li + li {
+        margin-top: 4px;
+      }
+      .note {
+        max-width: 640px;
+        margin: 36px auto 0;
+        font-size: 14px;
+        line-height: 1.6;
+        color: var(--muted);
+      }
+
+      /* ---- こんな方に ---- */
+      .who {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        justify-content: center;
+        max-width: 820px;
+        margin: 36px auto 0;
+        padding: 0;
+        list-style: none;
+      }
+      .who li {
+        padding: 12px 20px;
+        border-radius: 980px;
+        background: #fff;
+        font-size: 17px;
+        line-height: 1.5;
+        color: var(--text);
+        box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+      }
+
+      /* ---- フッター ---- */
+      footer {
+        padding: 28px 22px 44px;
+        background: var(--surface);
+        border-top: 1px solid var(--hairline);
+        font-size: 12px;
+        line-height: 1.6;
+        color: var(--muted);
+      }
+      footer .wrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 24px;
+        justify-content: space-between;
+        align-items: center;
+      }
+      footer nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 20px;
+      }
+      footer a {
+        color: #424245;
+        text-decoration: none;
+      }
+      footer a:hover {
+        text-decoration: underline;
+      }
+
+      /* ---- 使い方の見出し: 料金と同じグラデーション（ui-refine L1④・暗い節2つの見出しをそろえる） ---- */
+      #how h2 {
+        background: linear-gradient(90deg, #2997ff, #a972ff 55%, #ff6b8b);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      /* ---- プライバシーの4枚: グレーの色味のままガラスの透明感（ui-refine L1③・値の正本 docs/design/ui-refine/l1/after.css）。
+         白い地では透ける物が無いので、カード群の背後にごく薄い青紫のにじみ（見出しのグラデーションと同じ系統）を置く ---- */
+      #privacy .wrap {
+        position: relative;
+        isolation: isolate;
+      }
+      #privacy .bento-2 {
+        position: relative;
+      }
+      #privacy .bento-2::before {
+        content: '';
+        position: absolute;
+        inset: -40px -60px;
+        z-index: -1;
+        background:
+          radial-gradient(40% 55% at 22% 35%, rgba(41, 151, 255, 0.12), transparent 70%),
+          radial-gradient(38% 50% at 78% 70%, rgba(169, 114, 255, 0.1), transparent 70%);
+        filter: blur(8px);
+        pointer-events: none;
+      }
+      #privacy .bento-2 .card {
+        position: relative;
+        isolation: isolate;
+        background:
+          linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.5) 0%,
+            rgba(255, 255, 255, 0.14) 40%,
+            rgba(255, 255, 255, 0) 60%,
+            rgba(255, 255, 255, 0.1) 100%
+          ),
+          rgba(120, 120, 128, 0.1);
+        -webkit-backdrop-filter: blur(22px) saturate(180%);
+        backdrop-filter: blur(22px) saturate(180%);
+        box-shadow:
+          inset 0 1px 1px rgba(255, 255, 255, 0.9),
+          inset 0 0 0 0.5px rgba(0, 0, 0, 0.05),
+          0 14px 34px -20px rgba(0, 0, 0, 0.22);
+      }
+      /* にじみの上でも本文が 4.5:1 を保つよう、この節のカードの本文だけ灰色を一段濃く（#6e6e73 は 3.99:1 まで落ちた・実測） */
+      #privacy .bento-2 .card p {
+        color: #5f5f64;
+      }
+      #privacy .bento-2 .card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        padding: 1px;
+        border-radius: inherit;
+        background: linear-gradient(
+          160deg,
+          rgba(255, 255, 255, 0.95),
+          rgba(255, 255, 255, 0.2) 32%,
+          rgba(255, 255, 255, 0) 55%,
+          rgba(255, 255, 255, 0.6)
+        );
+        -webkit-mask:
+          linear-gradient(#000 0 0) content-box,
+          linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+      }
+
+      /* ---- スクロール出現（JS 有効時のみ、Reduce Motion では無効） ---- */
+      .js [data-reveal] {
+        opacity: 0;
+        transform: translateY(28px);
+        transition:
+          opacity 0.7s var(--ease),
+          transform 0.7s var(--ease);
+      }
+      .js [data-reveal].is-in {
+        opacity: 1;
+        transform: none;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        .js [data-reveal] {
+          opacity: 1;
+          transform: none;
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav" id="nav" aria-label="En esta página">
+      <a class="brand" href="#top">memoro</a>
+      <div class="nav-links">
+        <a href="#how">Cómo funciona</a>
+        <a href="#features">Funciones</a>
+        <a href="#timer">Temporizador</a>
+        <a href="#price">Precio</a>
+        <a href="#privacy">Privacidad</a>
+      </div>
+      <details class="lang-switch">
+        <summary aria-label="Elegir idioma"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18" /></svg>Español</summary>
+        <ul>
+          <li><a href="../" hreflang="ja" lang="ja" aria-current="false">日本語</a></li>
+          <li><a href="../en/" hreflang="en" lang="en" aria-current="false">English</a></li>
+          <li><a href="../zh_CN/" hreflang="zh-CN" lang="zh-CN" aria-current="false">简体中文</a></li>
+          <li><a href="../zh_TW/" hreflang="zh-TW" lang="zh-TW" aria-current="false">繁體中文</a></li>
+          <li><a href="../ko/" hreflang="ko" lang="ko" aria-current="false">한국어</a></li>
+          <li><a href="../es/" hreflang="es" lang="es" aria-current="page">Español</a></li>
+          <li><a href="../pt_BR/" hreflang="pt-BR" lang="pt-BR" aria-current="false">Português (Brasil)</a></li>
+          <li><a href="../fr/" hreflang="fr" lang="fr" aria-current="false">Français</a></li>
+          <li><a href="../de/" hreflang="de" lang="de" aria-current="false">Deutsch</a></li>
+        </ul>
+      </details>
+      <a
+        class="nav-cta"
+        href="https://chromewebstore.google.com/detail/nlmbplmeopopafpnlaojoampgogbmccg"
+        >Añadir a Chrome</a
+      >
+    </nav>
+
+    <!-- ヒーロー（明） -->
+    <header class="section" id="top">
+      <div class="wrap">
+        <p class="eyebrow">memoro</p>
+        <h1>
+          <span class="ph">Lo que</span> <span class="ph">descubres</span> <span class="ph">en la web.</span> <br /><span class="ph">Al instante,</span> <span class="ph">en tarjetas de memoria.</span>
+        </h1>
+        <p class="subhead">
+          Convierte texto web en flashcards. SM-2 muestra solo el repaso de hoy. Memoriza vocabulario. Datos locales, sin registro.
+        </p>
+        <div class="cta-row">
+          <a
+            class="btn"
+            href="https://chromewebstore.google.com/detail/nlmbplmeopopafpnlaojoampgogbmccg"
+            >Añadir a Chrome</a
+          >
+          <a class="more" href="#how">Ver cómo funciona</a>
+        </div>
+        <figure class="device" data-reveal>
+          <div class="window"><img
+            src="../assets/hero-popup.png"
+            width="760"
+            height="480"
+            alt="Ventana emergente de memoro con la pregunta y la respuesta de una tarjeta del repaso de hoy y tres botones: Otra vez / Bien / Fácil."
+          /></div>
+        </figure>
+      </div>
+    </header>
+
+    <!-- 3ステップ（暗） -->
+    <section class="section dark" id="how">
+      <div class="wrap">
+        <p class="eyebrow">Empieza en 3 pasos</p>
+        <h2>Selecciona. Escribe. Repasa.</h2>
+        <p class="subhead">
+          memoro es una extensión de Chrome que permite seleccionar texto de una página web, elegir «Añadir tarjeta a memoro» en el menú contextual y guardarlo como tarjeta de memoria (flashcard) en el cuadro de diálogo. Después, basta con dedicar unos minutos al día a las tarjetas para repasar hoy indicadas en el icono de la barra de herramientas.
+        </p>
+        <ol class="bento bento-3">
+          <li class="card" data-reveal>
+            <div class="num" aria-hidden="true">1</div>
+            <h3>Selecciona</h3>
+            <p>Selecciona el texto que quieras recordar en una página y haz clic con el botón derecho → «Añadir tarjeta a memoro».</p>
+          </li>
+          <li class="card" data-reveal>
+            <div class="num" aria-hidden="true">2</div>
+            <h3>Escribe</h3>
+            <p>
+              Escribe una pregunta breve en el cuadro de diálogo y guarda. También puedes dejarla en blanco; el texto seleccionado será la pregunta.
+            </p>
+          </li>
+          <li class="card" data-reveal>
+            <div class="num" aria-hidden="true">3</div>
+            <h3>Repasa</h3>
+            <p>
+              Haz clic en el icono de la barra de herramientas con el indicador de la cantidad de tarjetas para hoy y evalúate con una de las tres opciones: «Otra vez / Bien / Fácil».
+            </p>
+          </li>
+        </ol>
+        <figure class="device" data-reveal>
+          <div class="window"><img
+            src="../assets/step-save-dialog.png"
+            width="760"
+            height="480"
+            loading="lazy"
+            alt="Cuadro de diálogo para guardar: el texto seleccionado en la web ocupa el reverso y la pregunta se escribe en el anverso."
+          /></div>
+          <figcaption>El texto seleccionado pasa al reverso. La pregunta puede ser breve o quedar en blanco.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 主な機能（明） -->
+    <section class="section" id="features">
+      <div class="wrap">
+        <p class="eyebrow">Funciones principales</p>
+        <h2>Repasa solo lo de hoy.</h2>
+        <p class="subhead">
+          La repetición espaciada (método SM-2) selecciona solo las tarjetas cuya fecha de repaso ha llegado. Es útil para recordar términos de exámenes de certificación, vocabulario en inglés y conocimientos especializados que quieras conservar después de leer.
+        </p>
+        <figure class="device" data-reveal>
+          <div class="window"><img
+            src="../assets/feature-options.png"
+            width="1280"
+            height="800"
+            loading="lazy"
+            alt="Pantalla Gestionar tarjetas de memoro: lista de tarjetas, campo de búsqueda, etiquetas y el próximo repaso de cada tarjeta."
+          /></div>
+          <figcaption>Pantalla «Gestionar tarjetas»: lista, búsqueda por palabras clave, etiquetas, edición y eliminación.</figcaption>
+        </figure>
+        <ul class="features" data-reveal>
+          <li><strong>Crea desde el menú contextual</strong>Creación de tarjetas a partir del texto seleccionado (se guardan automáticamente la URL y el título de la página fuente).</li>
+          <li><strong>Solo el repaso de hoy</strong>El algoritmo de repetición espaciada SM-2 muestra automáticamente solo las tarjetas que toca repasar hoy.</li>
+          <li><strong>Tres opciones para el próximo repaso</strong>Tres opciones de autoevaluación (Otra vez / Bien / Fácil) ajustan automáticamente la fecha del próximo repaso.</li>
+          <li><strong>Pantalla «Gestionar tarjetas»</strong>Lista, búsqueda por palabras clave, edición y eliminación.</li>
+          <li><strong>Exportar e importar en JSON</strong>Exporta e importa en formato JSON para hacer copias de seguridad o trasladar los datos manualmente a otro dispositivo. Disponible en cualquier momento, independientemente del límite de tarjetas.</li>
+          <li><strong>Atajo de teclado</strong>También puedes convertir el texto seleccionado en una tarjeta con un atajo de teclado (Alt+Shift+M en Windows, Control+Shift+M en Mac, Alt+Shift+K en ChromeOS; puedes cambiarlo en chrome://extensions/shortcuts).</li>
+          <li><strong>Organiza con etiquetas</strong>Organiza las tarjetas con etiquetas y consulta o repasa las tarjetas por etiqueta.</li>
+          <li><strong>CSV para Anki</strong>Exporta archivos CSV para Anki (separados por comas o tabulaciones).</li>
+          <li><strong>Repasa con el teclado</strong>También puedes repasar con el teclado (Espacio para «Ver respuesta», 1/2/3 para calificar, H para «Pista»).</li>
+          <li><strong>Deshaz una calificación</strong>Si pulsas la calificación equivocada, «Deshacer» anula tu última calificación.</li>
+          <li><strong>Edita desde la respuesta</strong>Edita una tarjeta directamente desde la pantalla de respuesta.</li>
+          <li><strong>Importa CSV / TSV</strong>Importación de CSV / TSV (archivos exportados desde memoro o Anki; se omiten las filas cuyo anverso y reverso coinciden con una tarjeta existente; la versión gratuita admite hasta 50 tarjetas).</li>
+          <li><strong>Crea desde la ventana emergente</strong>También puedes crear tarjetas con «Convertir la selección en tarjeta» en la ventana emergente. En los dispositivos táctiles, los botones se agrandan para pulsarlos con facilidad.</li>
+          <li><strong>Interfaz en 9 idiomas</strong>Japonés, inglés, chino (simplificado / tradicional), coreano, español, portugués (Brasil), francés y alemán</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 忘却曲線と復習タイマー（薄灰）: 訴求は事実だけ（効果の断定・倍率・「科学的に証明」は書かない）。
+         根拠は下の出典リスト（一次資料）。文言の正本は docs/store/review-timer-listing-diff.md -->
+    <section class="section gray" id="timer">
+      <div class="wrap">
+        <p class="eyebrow">Curva del olvido y temporizador de repaso</p>
+        <h2>Cuántas horas faltan <br />para el próximo repaso.</h2>
+        <p class="subhead">
+          Con el tiempo, olvidamos lo que aprendemos. El psicólogo Hermann Ebbinghaus midió en sí mismo esta «curva del olvido» en 1885, y un estudio de replicación de 2015 informó resultados muy parecidos a sus datos originales. memoro fija la fecha del próximo repaso con repetición espaciada (método SM-2), que amplía el intervalo tras cada repaso, y el temporizador de repaso te avisa cuándo toca.
+        </p>
+        <figure class="device" data-reveal>
+          <div class="window"><img
+            src="../assets/feature-review-timer.png"
+            width="1280"
+            height="800"
+            loading="lazy"
+            alt="Ventana emergente de memoro con «Próximo repaso en N horas», la fecha y la cantidad de tarjetas, junto a la pantalla de configuración con el interruptor del recordatorio diario y el gráfico de retención de memoria (esquema)."
+          /></div>
+          <figcaption>El temporizador de repaso en la ventana emergente y el «Gráfico de retención de memoria (esquema)» en la pantalla de configuración.</figcaption>
+        </figure>
+        <ul class="bento bento-3">
+          <li class="card" data-reveal>
+            <h3>Temporizador de repaso</h3>
+            <p>
+              La ventana emergente muestra cuánto falta para el próximo repaso, junto con la fecha y la cantidad de tarjetas. En la pantalla «Gestionar tarjetas» también puedes ver el próximo repaso de cada tarjeta.
+            </p>
+          </li>
+          <li class="card" data-reveal>
+            <h3>Un recordatorio al día (opcional)</h3>
+            <p>
+              A la hora que elijas (21:00 por defecto), recibes una notificación solo los días con tarjetas pendientes. Muestra únicamente la cantidad de tarjetas, nunca su contenido.
+            </p>
+          </li>
+          <li class="card" data-reveal>
+            <h3>Gráfico de retención de memoria</h3>
+            <p>
+              Un esquema, calculado a partir del promedio de tus tarjetas, que muestra cómo se amplían los intervalos de repaso. No son datos medidos, sino una ilustración de cómo funciona la repetición espaciada.
+            </p>
+          </li>
+        </ul>
+        <h3 class="gain-title" data-reveal>Resultados de hoy al terminar el repaso</h3>
+        <p class="subhead" data-reveal>
+          Al terminar un repaso, si recordaste alguna tarjeta, la pantalla de finalización muestra la cantidad de tarjetas recordadas hoy. Si entre ellas hay tarjetas que también recordaste la última vez, también muestra el promedio de días desde el último repaso y cuánto han aumentado los días hasta el próximo repaso (por ejemplo, de 4 a 11 días en promedio), y presenta en un mismo esquema dos curvas del olvido, con y sin el repaso de hoy (las curvas son un esquema, no una medición de tu memoria).
+        </p>
+        <h3 class="gain-title" data-reveal>Ayudas para recordar</h3>
+        <ul class="bento bento-3">
+          <li class="card" data-reveal>
+            <h3>Pista</h3>
+            <p>
+              Si no recuerdas la respuesta, presiona «Pista» para revelarla poco a poco desde el principio (unos pocos caracteres a la vez en japonés y una palabra a la vez en idiomas como el inglés; nunca se muestra la respuesta completa). Si usas una pista, «Fácil» se trata igual que «Bien» para evitar que el intervalo aumente demasiado.
+            </p>
+          </li>
+          <li class="card" data-reveal>
+            <h3>Cómo se cuenta una tarjeta «consolidada»</h3>
+            <p>
+              Después del primer día en que recuerdas la respuesta, una tarjeta se cuenta como «consolidada» si la recuerdas tres veces seguidas en tres días distintos. El resultado aparece en la pantalla de finalización y en la lista de tarjetas (usamos como referencia un procedimiento de reaprendizaje utilizado en estudios sobre la memoria).
+            </p>
+          </li>
+          <li class="card" data-reveal>
+            <h3>Repaso antes de dormir</h3>
+            <p>
+              La hora predeterminada del recordatorio de repaso es a las 21:00. Un estudio sugiere que dormir en las horas siguientes al aprendizaje favorece la retención, por eso elegimos un horario antes de dormir (puedes cambiarlo en la configuración).
+            </p>
+          </li>
+        </ul>
+        <ul class="sources" data-reveal>
+          <li>
+            Fuentes: H. Ebbinghaus, Über das Gedächtnis (1885) / traducción al inglés
+            <a href="https://psychclassics.yorku.ca/Ebbinghaus/memory7.htm">Memory, Chapter VII (Ruger &amp; Bussenius, 1913)</a>
+          </li>
+          <li>
+            J. M. J. Murre &amp; J. Dros,
+            <a href="https://doi.org/10.1371/journal.pone.0120644">“Replication and Analysis of Ebbinghaus’ Forgetting Curve”</a>,
+            PLOS ONE 10(7), 2015
+          </li>
+          <li>
+            P. A. Wozniak,
+            <a href="https://www-v1.supermemo.com/archives1990-2015/english/ol/sm2">Optimization of learning (1990) — Algorithm SM-2</a>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 料金（暗） -->
+    <section class="section dark" id="price">
+      <div class="wrap">
+        <p class="eyebrow">Precio</p>
+        <h2 class="gradient">Gratis hasta 50 tarjetas.</h2>
+        <p class="subhead">
+          Puedes crear hasta 50 tarjetas gratis. El repaso, la gestión de tarjetas y las funciones Exportar / Importar se pueden usar sin restricciones en la versión gratuita, independientemente del límite de tarjetas. Un pago único permite crear tarjetas sin límite. En Japón el precio es de 600 JPY; en otras regiones, se muestra en la pantalla de compra en la moneda local (o en dólares estadounidenses donde esa moneda no esté disponible).
+        </p>
+        <ul class="bento bento-2">
+          <li class="card" data-reveal>
+            <div class="price">Gratis</div>
+            <h3>Hasta 50 tarjetas</h3>
+            <p>El repaso, la gestión de tarjetas y Exportar / Importar funcionan independientemente del límite de tarjetas. No necesitas registrarte ni iniciar sesión.</p>
+          </li>
+          <li class="card" data-reveal>
+            <div class="price">600<small> JPY</small></div>
+            <h3>Sin límite con un pago único (precio en Japón)</h3>
+            <p>No es una suscripción: no hay pagos adicionales después de la compra. En otras regiones, el precio se muestra en la pantalla de compra en la moneda local (o en dólares estadounidenses donde esa moneda no esté disponible).</p>
+          </li>
+        </ul>
+        <div class="cta-row">
+          <a
+            class="btn"
+            href="https://chromewebstore.google.com/detail/nlmbplmeopopafpnlaojoampgogbmccg"
+            >Añadir a Chrome</a
+          >
+        </div>
+      </div>
+    </section>
+
+    <!-- プライバシー（明） -->
+    <section class="section" id="privacy">
+      <div class="wrap">
+        <p class="eyebrow">Privacidad</p>
+        <h2>El contenido de tus tarjetas. <br />Solo en tu dispositivo.</h2>
+        <ul class="bento bento-2">
+<li class="card" data-reveal>
+            <h3>El contenido de las tarjetas no se envía al exterior</h3>
+            <p>
+              Tus tarjetas y tu progreso de aprendizaje se guardan únicamente en tu navegador (chrome.storage.local) y nunca se envían a servidores externos.
+            </p>
+          </li>
+          <li class="card" data-reveal>
+            <h3>Comunicación solo durante la compra</h3>
+            <p>
+              memoro se comunica con ExtensionPay / Stripe para procesar el pago únicamente al comprar o restaurar el desbloqueo de pago único (incluida la nueva comprobación del estado de compra). Ninguna otra operación, incluidas la creación de tarjetas, el repaso, la gestión de tarjetas y la importación/exportación, genera comunicaciones.
+            </p>
+          </li>
+          <li class="card" data-reveal>
+            <h3>Sin cuenta</h3>
+            <p>No necesitas registrarte ni iniciar sesión (solo se requieren datos de pago al comprar).</p>
+          </li>
+<li class="card" data-reveal>
+            <h3>Sin anuncios ni seguimiento.</h3>
+          </li>
+        </ul>
+
+        <p class="lead" data-reveal>
+          <strong>Permisos: solo los necesarios</strong>
+          Estos son los permisos que solicita memoro y para qué se usan. No recopila el historial de navegación ni accede de forma permanente a todos los sitios.
+        </p>
+        <table class="perms" data-reveal>
+          <tbody>
+            <tr>
+              <th scope="row">storage</th>
+              <td>Para guardar tus tarjetas y ajustes (incluido el estado de compra) en el navegador.</td>
+            </tr>
+            <tr>
+              <th scope="row">contextMenus</th>
+              <td>Para mostrar «Añadir tarjeta a memoro» en el menú del botón derecho.</td>
+            </tr>
+            <tr>
+              <th scope="row">activeTab / scripting</th>
+              <td>
+                Para mostrar el diálogo de guardado en la pestaña actual solo cuando seleccionas la opción del menú, presionas el atajo de teclado o pulsas «Convertir la selección en tarjeta» en la ventana emergente (sin acceso continuo a todos los sitios).
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">alarms</th>
+              <td>Para actualizar periódicamente (como máximo una vez por hora) el indicador de la cantidad de tarjetas para repasar hoy y programar la hora del recordatorio del temporizador de repaso.</td>
+            </tr>
+            <tr>
+              <th scope="row">notifications (opcional)</th>
+              <td>
+                Solo si activas los recordatorios del temporizador de repaso, para mostrar «Hoy tienes N por repasar» a la hora que elijas (Chrome pide permiso al activarlo; las notificaciones nunca incluyen el contenido de las tarjetas).
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="note">
+          Nota: No guardes información confidencial ni secretos, como contraseñas, en las tarjetas. Los datos se guardan localmente sin cifrar.
+        </p>
+      </div>
+    </section>
+
+    <!-- こんな方に（薄灰） -->
+    <section class="section gray" id="who">
+      <div class="wrap">
+        <p class="eyebrow">Para quién es</p>
+        <h2>Que no se quede en una lectura.</h2>
+        <ul class="who" data-reveal>
+          <li>Quienes preparan exámenes y certificaciones de informática, idiomas, derecho, contabilidad y otras materias.</li>
+          <li>Quienes quieren aprender poco a poco vocabulario en inglés o términos especializados.</li>
+          <li>Quienes quieren recordar más tarde el contenido de los artículos que han leído.</li>
+        </ul>
+        <div class="cta-row">
+          <a
+            class="btn"
+            href="https://chromewebstore.google.com/detail/nlmbplmeopopafpnlaojoampgogbmccg"
+            >Añadir a Chrome</a
+          >
+          <a class="more" href="../privacy-ja.html">Política de privacidad</a>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="wrap">
+        <div>memoro − Tarjetas de memoria y repetición espaciada</div>
+        <nav aria-label="Pie de página">
+          <a href="https://chromewebstore.google.com/detail/nlmbplmeopopafpnlaojoampgogbmccg"
+            >Chrome Web Store</a
+          >
+          <a href="../privacy-ja.html">Política de privacidad</a>
+          <a href="mailto:meer076th@gmail.com">Contacto</a>
+        </nav>
+      </div>
+    </footer>
+
+    <script>
+      /*!
+       * liquid-glass.js — Apple-style liquid glass refraction for any element.
+       * MIT License, Copyright (c) 2026 Deepika Rao
+       * https://github.com/deepika-builds/liquid-glass
+       * （本ページに同梱。外部スクリプトは読み込まない）
+       */
+      (function (global) {
+        'use strict';
+        const SVG_NS = 'http://www.w3.org/2000/svg';
+        let uid = 0;
+        let svgDefs = null;
+        const supported = (() => {
+          const ua = navigator.userAgent;
+          const isSafari = /Safari/.test(ua) && !/Chrome|Chromium|Edg/.test(ua);
+          const isFirefox = /Firefox/.test(ua);
+          if (isSafari || isFirefox) return false;
+          if (!CSS.supports('backdrop-filter', 'url(#lg)')) return false;
+          try {
+            const c = document.createElement('canvas');
+            c.width = c.height = 4;
+            c.getContext('2d').getImageData(0, 0, 1, 1);
+            return true;
+          } catch (_) {
+            return false;
+          }
+        })();
+        function ensureDefs() {
+          if (svgDefs) return svgDefs;
+          const svg = document.createElementNS(SVG_NS, 'svg');
+          svg.setAttribute('width', '0');
+          svg.setAttribute('height', '0');
+          svg.setAttribute('aria-hidden', 'true');
+          svg.style.position = 'absolute';
+          svgDefs = document.createElementNS(SVG_NS, 'defs');
+          svg.appendChild(svgDefs);
+          document.body.appendChild(svg);
+          return svgDefs;
+        }
+        function makeMap(w, h, radius, border, mapBlur) {
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          const gx = ctx.createLinearGradient(0, 0, w, 0);
+          gx.addColorStop(0, 'rgb(0,0,0)');
+          gx.addColorStop(1, 'rgb(255,0,0)');
+          ctx.fillStyle = gx;
+          ctx.fillRect(0, 0, w, h);
+          const gy = ctx.createLinearGradient(0, 0, 0, h);
+          gy.addColorStop(0, 'rgb(0,0,0)');
+          gy.addColorStop(1, 'rgb(0,0,255)');
+          ctx.globalCompositeOperation = 'difference';
+          ctx.fillStyle = gy;
+          ctx.fillRect(0, 0, w, h);
+          ctx.globalCompositeOperation = 'source-over';
+          const inset = border * Math.min(w, h);
+          ctx.filter = 'blur(' + mapBlur + 'px)';
+          ctx.fillStyle = 'rgba(128,128,128,0.93)';
+          ctx.beginPath();
+          ctx.roundRect(inset, inset, w - inset * 2, h - inset * 2, Math.max(radius - inset, 2));
+          ctx.fill();
+          ctx.filter = 'none';
+          return canvas.toDataURL();
+        }
+        function buildFilter(id, scales) {
+          const filter = document.createElementNS(SVG_NS, 'filter');
+          filter.setAttribute('id', id);
+          filter.setAttribute('x', '0');
+          filter.setAttribute('y', '0');
+          filter.setAttribute('width', '100%');
+          filter.setAttribute('height', '100%');
+          // 必須: linearRGB のままだと中立グレーがずれて全体が幽霊のように流れる
+          filter.setAttribute('color-interpolation-filters', 'sRGB');
+          const feImage = document.createElementNS(SVG_NS, 'feImage');
+          feImage.setAttribute('x', '0');
+          feImage.setAttribute('y', '0');
+          feImage.setAttribute('result', 'map');
+          feImage.setAttribute('preserveAspectRatio', 'none');
+          filter.appendChild(feImage);
+          const keep = [
+            '1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0',
+            '0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0',
+            '0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0',
+          ];
+          const channels = [];
+          for (let i = 0; i < 3; i++) {
+            const disp = document.createElementNS(SVG_NS, 'feDisplacementMap');
+            disp.setAttribute('in', 'SourceGraphic');
+            disp.setAttribute('in2', 'map');
+            disp.setAttribute('scale', scales[i]);
+            disp.setAttribute('xChannelSelector', 'R');
+            disp.setAttribute('yChannelSelector', 'B');
+            disp.setAttribute('result', 'd' + i);
+            filter.appendChild(disp);
+            const cm = document.createElementNS(SVG_NS, 'feColorMatrix');
+            cm.setAttribute('in', 'd' + i);
+            cm.setAttribute('type', 'matrix');
+            cm.setAttribute('values', keep[i]);
+            cm.setAttribute('result', 'c' + i);
+            filter.appendChild(cm);
+            channels.push('c' + i);
+          }
+          const blend1 = document.createElementNS(SVG_NS, 'feBlend');
+          blend1.setAttribute('in', channels[0]);
+          blend1.setAttribute('in2', channels[1]);
+          blend1.setAttribute('mode', 'screen');
+          blend1.setAttribute('result', 'c01');
+          filter.appendChild(blend1);
+          const blend2 = document.createElementNS(SVG_NS, 'feBlend');
+          blend2.setAttribute('in', 'c01');
+          blend2.setAttribute('in2', channels[2]);
+          blend2.setAttribute('mode', 'screen');
+          filter.appendChild(blend2);
+          ensureDefs().appendChild(filter);
+          return { filter, feImage };
+        }
+        function resolveRadius(el, w, h, override) {
+          if (override != null) return override;
+          const raw = getComputedStyle(el).borderTopLeftRadius || '0px';
+          const v = parseFloat(raw) || 0;
+          return raw.trim().endsWith('%') ? (v / 100) * Math.min(w, h) : v;
+        }
+        function liquidGlass(el, opts) {
+          const o = Object.assign(
+            { scale: -112, chroma: 6, border: 0.07, mapBlur: 12, blur: 3, saturate: 1.5, radius: null, fallbackBlur: 16 },
+            opts
+          );
+          if (!supported) {
+            const frosted = 'blur(' + o.fallbackBlur + 'px) saturate(' + o.saturate + ')';
+            el.style.backdropFilter = frosted;
+            el.style.webkitBackdropFilter = frosted;
+            el.classList.add('lg-fallback');
+            return {
+              supported: false,
+              refresh: function () {},
+              destroy: function () {
+                el.style.backdropFilter = '';
+                el.style.webkitBackdropFilter = '';
+                el.classList.remove('lg-fallback');
+              },
+            };
+          }
+          const id = 'lg-filter-' + ++uid;
+          const scales = [o.scale, o.scale + o.chroma, o.scale + 2 * o.chroma];
+          const parts = buildFilter(id, scales);
+          function refresh() {
+            const w = el.offsetWidth;
+            const h = el.offsetHeight;
+            if (!w || !h) return;
+            const radius = resolveRadius(el, w, h, o.radius);
+            parts.feImage.setAttribute('href', makeMap(w, h, radius, o.border, o.mapBlur));
+            parts.feImage.setAttribute('width', w);
+            parts.feImage.setAttribute('height', h);
+          }
+          refresh();
+          el.style.backdropFilter = 'url(#' + id + ') blur(' + o.blur + 'px) saturate(' + o.saturate + ')';
+          let timer = null;
+          const ro = new ResizeObserver(function () {
+            clearTimeout(timer);
+            timer = setTimeout(refresh, 120);
+          });
+          ro.observe(el);
+          return {
+            supported: true,
+            refresh: refresh,
+            destroy: function () {
+              ro.disconnect();
+              clearTimeout(timer);
+              parts.filter.remove();
+              el.style.backdropFilter = '';
+            },
+          };
+        }
+        global.liquidGlass = liquidGlass;
+      })(window);
+
+      // ---- ページ固有の配線（外部依存なし） ----
+      (function () {
+        document.documentElement.classList.add('js');
+        const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const nav = document.getElementById('nav');
+
+        // ナビのガラス: 控えめな屈折（scale −60 / chroma 4）。本文の可読性を優先して内側のぼかしは強め。
+        if (!reduce && nav) {
+          try {
+            liquidGlass(nav, { scale: -60, chroma: 4, border: 0.12, mapBlur: 10, blur: 14, saturate: 1.6 });
+          } catch (_) {
+            /* 屈折が使えない環境では CSS の曇りガラスのまま */
+          }
+        }
+
+        // 暗いセクションの上にナビが来たら配色を反転する（ガラスは下の色に馴染む、の近似）。
+        // ナビ中央の高さ（y≈40px）を覆うセクションを scroll ごとに 1 回だけ調べる。
+        if (nav) {
+          const sections = [...document.querySelectorAll('.section')];
+          let ticking = false;
+          const update = () => {
+            ticking = false;
+            const y = 40;
+            const hit = sections.find((sec) => {
+              const r = sec.getBoundingClientRect();
+              return r.top <= y && r.bottom > y;
+            });
+            nav.classList.toggle('on-dark', !!hit && hit.classList.contains('dark'));
+          };
+          addEventListener(
+            'scroll',
+            () => {
+              if (!ticking) {
+                ticking = true;
+                requestAnimationFrame(update);
+              }
+            },
+            { passive: true }
+          );
+          update();
+        }
+
+        // スクロール出現: 一度だけ、短く、跳ねない
+        const targets = document.querySelectorAll('[data-reveal]');
+        if (reduce || !('IntersectionObserver' in window)) {
+          targets.forEach((t) => t.classList.add('is-in'));
+          return;
+        }
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const e of entries) {
+              if (e.isIntersecting) {
+                e.target.classList.add('is-in');
+                io.unobserve(e.target);
+              }
+            }
+          },
+          { rootMargin: '0px 0px -12% 0px', threshold: 0.05 }
+        );
+        targets.forEach((t) => io.observe(t));
+      })();
+    </script>
+  </body>
+</html>
