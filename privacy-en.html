@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>memoro Privacy Policy</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      body {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 32px 20px 64px;
+        font-family:
+          system-ui, -apple-system, 'Segoe UI', 'Hiragino Kaku Gothic ProN',
+          Meiryo, sans-serif;
+        line-height: 1.8;
+        color: #1f2937;
+        background: #fff;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          color: #e5e7eb;
+          background: #111827;
+        }
+        a {
+          color: #60a5fa;
+        }
+        th,
+        td {
+          border-color: #374151;
+        }
+      }
+      h1 {
+        font-size: 1.6rem;
+      }
+      h2 {
+        font-size: 1.15rem;
+        margin-top: 2rem;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 4px;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 12px 0;
+      }
+      th,
+      td {
+        border: 1px solid #d1d5db;
+        padding: 8px 10px;
+        text-align: left;
+        vertical-align: top;
+      }
+      .updated {
+        color: #6b7280;
+        font-size: 0.9rem;
+      }
+      code {
+        background: rgba(127, 127, 127, 0.15);
+        padding: 1px 5px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>memoro Privacy Policy</h1>
+    <p class="updated">Last updated: 2026-11-06 · <a href="./privacy-ja.html">日本語版</a></p>
+    <p class="updated">
+      This is an English translation of the Japanese policy. If the two versions differ, the Japanese version is the one that applies.
+    </p>
+
+    <h2>Summary</h2>
+    <p>
+      memoro ("the extension") is a Chrome extension designed with your privacy as the first priority.
+      <strong
+        >It never collects or transmits the flashcards you create or your study data. The only time it communicates with
+        an outside service is when you buy or restore the one-time unlock, and then only with ExtensionPay / Stripe to
+        process the payment.</strong
+      >
+    </p>
+    <p>
+      The purchase feature (including regional pricing), the review timer, and the links to the feedback form are
+      features of version 0.3.0 and later.
+    </p>
+
+    <h2>Information we collect</h2>
+    <p>
+      <strong>We do not collect study data.</strong>
+      The extension does not collect the flashcards you create, your review progress, your browsing history, or usage
+      analytics. It uses no cookies and no tracking technology.
+    </p>
+    <ul>
+      <li>It does not collect your name, email address, or other personal information for any study feature.</li>
+      <li>It does not read or record your browsing or access history.</li>
+      <li>It does not collect usage or analytics data.</li>
+    </ul>
+    <p>
+      <strong>Exception (only if you buy the unlock)</strong>:
+      If you buy the paid version (a one-time purchase; ¥600 in Japan, shown in your local currency elsewhere), the
+      extension communicates with the payment service ExtensionPay (which uses Stripe) to check your purchase status and
+      to restore a purchase on another device. In that case,
+      <strong
+        >the ExtensionPay library stores your purchase status, including the email address you entered at checkout, in
+        <code>chrome.storage.sync</code> (or <code>chrome.storage.local</code> when sync is not available).</strong
+      >
+      <strong
+        >If Chrome Sync is turned on, this information is synced to your other devices through your Google
+        account</strong
+      >
+      (your flashcards themselves stay in <code>chrome.storage.local</code> only and are never synced). The extension
+      never shows or exports this information in its screens, card manager, or export files. See "Operations that
+      communicate with a server" below.
+    </p>
+    <p>
+      <strong>How the regional price is chosen</strong>:
+      The price shown on the purchase button is chosen <strong>on your device</strong> from your device's time zone and
+      language settings. The time zone and language settings themselves are never sent anywhere. Only when you press the
+      purchase button does the name of the chosen price plan (for example, the US dollar plan) go to ExtensionPay so that
+      the checkout page can show the right price.
+    </p>
+
+    <h2>Where data is stored</h2>
+    <p>
+      The flashcards you create (front and back text, tags, the URL and title of the source page, and review progress)
+      and your settings are stored
+      <strong>only in your browser's local storage (<code>chrome.storage.local</code>).</strong>
+    </p>
+    <ul>
+      <li>The extension never sends cards or study data outside your browser.</li>
+      <li>No third party, including the developer, can access this data.</li>
+      <li>
+        Only <code>http</code> and <code>https</code> source URLs are stored; URLs in any other scheme are discarded when
+        the card is saved.
+      </li>
+      <li>
+        Review timer settings (whether notifications are on, the notification time, and whether today's notification
+        has already been decided) are also stored only in your browser.
+      </li>
+    </ul>
+
+    <h2>Operations that communicate with a server (purchase feature)</h2>
+    <p>
+      The extension can communicate with ExtensionPay (Stripe handles the payment itself) to process a purchase. This
+      happens only during the operations listed below.
+      <strong
+        >Everything else, including installing the extension, creating cards, reviewing, managing cards, and
+        export/import (JSON and CSV), involves no network communication at all.</strong
+      >
+    </p>
+    <table>
+      <tr>
+        <th>Operation</th>
+        <th>Network</th>
+      </tr>
+      <tr>
+        <td>Installing the extension, creating, reviewing, editing, or deleting cards, export/import (JSON and CSV)</td>
+        <td><strong>None</strong></td>
+      </tr>
+      <tr>
+        <td>
+          Pressing the purchase button on the settings page (in the Japanese UI the label is
+          "600円で無制限にする（買い切り）", which means "Unlock unlimited cards for ¥600 (one-time)")
+        </td>
+        <td>Yes (fetching plan information, opening the checkout page, checking purchase status)</td>
+      </tr>
+      <tr>
+        <td>Pressing "Already purchased?" on the settings page (to restore a purchase made on another device)</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Pressing "Recheck purchase status" on the settings page</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Anything else (including normal use after a purchase)</td>
+        <td><strong>None</strong></td>
+      </tr>
+    </table>
+    <p>
+      The extension does not check your license in the background. Unless you perform one of the operations above, it
+      never contacts ExtensionPay.
+    </p>
+
+    <h2>Links to external pages (feedback form and store reviews)</h2>
+    <p>
+      When you press "Send feedback", "Share your thoughts", or "Write a review on the store" on the settings page or in
+      the popup, a Google Form or the Chrome Web Store review page opens in a new browser tab.
+      <strong>The extension itself sends nothing to these pages.</strong>
+      The feedback form URL carries only the extension's version number (for example, 0.3.0) so that we can read your
+      answer in context; it never includes card content or personal information. Anything you type and submit on those
+      pages is handled under the privacy policy of the page's operator (Google).
+    </p>
+
+    <h2>Sharing with third parties</h2>
+    <p>
+      We do not share or sell study data (such as card content) with anyone. Only during a purchase does the extension
+      communicate with the following payment processors.
+    </p>
+    <table>
+      <tr>
+        <th>Processor</th>
+        <th>Purpose</th>
+        <th>Privacy policy</th>
+      </tr>
+      <tr>
+        <td>ExtensionPay LLC</td>
+        <td>Payment platform for browser extensions</td>
+        <td><a href="https://extensionpay.com/privacy.html">extensionpay.com/privacy.html</a></td>
+      </tr>
+      <tr>
+        <td>Stripe, Inc.</td>
+        <td>Credit card processing (through ExtensionPay)</td>
+        <td><a href="https://stripe.com/privacy">stripe.com/privacy</a></td>
+      </tr>
+    </table>
+
+    <h2>Why each permission is used</h2>
+    <table>
+      <tr>
+        <th>Permission</th>
+        <th>Purpose</th>
+      </tr>
+      <tr>
+        <td><code>storage</code></td>
+        <td>To store your flashcards and settings (including purchase status) in your browser</td>
+      </tr>
+      <tr>
+        <td><code>contextMenus</code></td>
+        <td>To show the right-click menu item "Add a card to memoro"</td>
+      </tr>
+      <tr>
+        <td><code>activeTab</code> / <code>scripting</code></td>
+        <td>
+          To show the save dialog temporarily in the current tab when you use the right-click menu, the keyboard
+          shortcut, or the popup button
+        </td>
+      </tr>
+      <tr>
+        <td><code>alarms</code></td>
+        <td>
+          To refresh the "due today" count periodically (at most once an hour) and to schedule the review timer
+          notification
+        </td>
+      </tr>
+      <tr>
+        <td><code>notifications</code> (optional)</td>
+        <td>
+          Only if you turn on the review timer's notifications, to show "You have N cards to review today" once a day
+          at the time you set. No notification appears on days with no due cards, and notifications never include card content (front
+          or back)
+        </td>
+      </tr>
+    </table>
+    <p>
+      The extension requests no <code>host_permissions</code>. Communication with the payment server for the purchase
+      feature works without any additional permanent site access. None of the permissions is used to send study data
+      anywhere.
+    </p>
+    <p>
+      <code>notifications</code> is an optional permission. It is not requested at install time; Chrome asks for it only
+      when you turn on the review timer's notifications. Notifications are shown on your device by Chrome, and no
+      network communication is involved. Turn notifications off and no further notifications appear.
+    </p>
+
+    <h2>How to delete your data</h2>
+    <ul>
+      <li><strong>Individual cards</strong>: delete them from the extension's settings page (card manager).</li>
+      <li>
+        <strong>Purchase status</strong>: removed when you uninstall the extension from Chrome. If it was stored in
+        <code>chrome.storage.sync</code>, Chrome Sync has also copied it to your other synced devices, so to remove it
+        completely you must uninstall the extension on every device or delete the data from Chrome's sync settings.
+      </li>
+      <li>
+        <strong>All data</strong>: uninstalling the extension from Chrome deletes everything it stored (study data and
+        purchase status).
+      </li>
+    </ul>
+
+    <h2>Children's privacy</h2>
+    <p>
+      Because the extension collects no study data, it can be used safely at any age. Buying the paid version requires a
+      payment method such as a credit card, with a parent's or guardian's consent.
+    </p>
+
+    <h2>Changes to this policy</h2>
+    <p>
+      When this policy changes, we update the "Last updated" date on this page and describe the change in the revision
+      history below.
+    </p>
+
+    <h2>Revision history</h2>
+    <ul>
+      <li>2026-07-12: First version.</li>
+      <li>2026-07-26: Added the contact email address.</li>
+      <li>
+        2026-07-26: With the introduction of the paid version (one-time ¥600, ExtensionPay/Stripe), added the payment
+        sections. Changed the statement "no external communication" to "study data is never sent; communication happens
+        only during a purchase", and added the list of operations that communicate, the processors, and how purchase
+        status is stored. Corrected the description of the <code>alarms</code> permission to match its actual behavior.
+      </li>
+      <li>
+        2026-07-26 (correction): Corrected where purchase status is stored from <code>chrome.storage.local</code> to the
+        actual <code>chrome.storage.sync</code> (falling back to <code>local</code> when sync is unavailable). Added that
+        it is copied to other devices when Chrome Sync is on, and what that means for deletion.
+      </li>
+      <li>
+        2026-10-19: With the review timer (one notification a day), added the optional <code>notifications</code>
+        permission, the use of <code>alarms</code> to schedule the notification, and the storage of review timer
+        settings.
+      </li>
+      <li>
+        2026-10-19: With regional pricing, revised the price wording and added how the region is chosen (on the device;
+        only the price plan name is sent at checkout), the links to the feedback form and store review page, and the
+        version in which each feature appeared. Corrected the purchase button label to match the actual UI.
+      </li>
+      <li>
+        2026-10-20: With version 0.4.0, added tags to the list of stored card content and noted CSV (for Anki) in
+        export/import (neither involves network communication). Added the keyboard shortcut and the popup button to the
+        operations that show the save dialog (no permission changes).
+      </li>
+      <li>2026-11-06: Added this English translation. No change to the policy itself.</li>
+    </ul>
+
+    <h2>Contact</h2>
+    <p>
+      Questions about this policy: <br />
+      Email: meer076th@gmail.com
+    </p>
+  </body>
+</html>
